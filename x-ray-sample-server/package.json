@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@aws-cdk/aws-ecr-assets": "^1.111.0",
+    "aws-sdk": "^2.939.0",
     "aws-xray-sdk": "^3.3.3",
     "express": "^4.17.1"
   }
