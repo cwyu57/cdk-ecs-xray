@@ -21,11 +21,19 @@ export class CdkEcsXrayStack extends cdk.Stack {
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition');
 
     taskDefinition
-      .addContainer('Container', {
+      .addContainer('XRaySampleServerContainer', {
         image: ecs.ContainerImage.fromDockerImageAsset(assets),
         memoryLimitMiB: 512,
       })
       .addPortMappings({ containerPort: 3000 });
+
+    taskDefinition
+      .addContainer('XRayDaemonContainer', {
+        image: ecs.ContainerImage.fromRegistry('amazon/aws-xray-daemon'),
+        cpu: 32,
+        memoryLimitMiB: 256,
+      })
+      .addPortMappings({ containerPort: 2000, protocol: ecs.Protocol.UDP });
 
     const fatgetService = new ecs.FargateService(this, 'FargateService', {
       cluster,
