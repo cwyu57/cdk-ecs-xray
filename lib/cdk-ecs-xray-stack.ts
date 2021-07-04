@@ -4,6 +4,8 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as ecrAssets from '@aws-cdk/aws-ecr-assets'
 import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2';
+import * as iam from '@aws-cdk/aws-iam';
+import * as logs from '@aws-cdk/aws-logs';
 
 export class CdkEcsXrayStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -21,11 +23,39 @@ export class CdkEcsXrayStack extends cdk.Stack {
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition');
 
     taskDefinition
-      .addContainer('Container', {
+      .addContainer('XRaySampleServerContainer', {
         image: ecs.ContainerImage.fromDockerImageAsset(assets),
         memoryLimitMiB: 512,
+        logging: ecs.LogDriver.awsLogs({
+          streamPrefix: 'x-ray-ecs-fargate-service',
+          logGroup: new logs.LogGroup(this, 'XRaySampleServerContainerLogGroup', {
+            logGroupName: 'x-ray-ecs-fargate-service-x-ray-sample-server-container',
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            retention: logs.RetentionDays.ONE_WEEK,
+          })
+        }),
       })
       .addPortMappings({ containerPort: 3000 });
+
+    taskDefinition
+      .addContainer('XRayDaemonContainer', {
+        image: ecs.ContainerImage.fromRegistry('amazon/aws-xray-daemon'),
+        cpu: 32,
+        memoryLimitMiB: 256,
+        logging: ecs.LogDriver.awsLogs({
+          streamPrefix: 'x-ray-ecs-fargate-service',
+          logGroup: new logs.LogGroup(this, 'XRayDaemonContainerLogGroup', {
+            logGroupName: 'x-ray-ecs-fargate-service-x-ray-daemon-container',
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            retention: logs.RetentionDays.ONE_WEEK,
+          })
+        }),
+      })
+      .addPortMappings({ containerPort: 2000, protocol: ecs.Protocol.UDP });
+
+    taskDefinition.taskRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AWSXRayDaemonWriteAccess'),
+    );
 
     const fatgetService = new ecs.FargateService(this, 'FargateService', {
       cluster,
