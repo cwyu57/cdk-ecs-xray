@@ -4,6 +4,7 @@ import * as ec2 from '@aws-cdk/aws-ec2';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as ecrAssets from '@aws-cdk/aws-ecr-assets'
 import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2';
+import * as iam from '@aws-cdk/aws-iam';
 import * as logs from '@aws-cdk/aws-logs';
 
 export class CdkEcsXrayStack extends cdk.Stack {
@@ -51,6 +52,10 @@ export class CdkEcsXrayStack extends cdk.Stack {
         }),
       })
       .addPortMappings({ containerPort: 2000, protocol: ecs.Protocol.UDP });
+
+    taskDefinition.taskRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AWSXRayDaemonWriteAccess'),
+    );
 
     const fatgetService = new ecs.FargateService(this, 'FargateService', {
       cluster,
