@@ -100,10 +100,10 @@ app.get('/dynamo-lambda-s3/:id', (req, res) => {
     }
   ).promise()
     .then(function (data) {
-      res.send(`Update Table ${tableName} Key ${{ id }} success}`);
+      res.send(`Update Table ${tableName} id ${id} success}`);
     })
     .catch(function(err) {
-      res.send(`Encountered error while Table ${tableName} Key ${{ id }}: ${err}`);
+      res.send(`Encountered error while Table ${tableName} id ${id}: ${err}`);
     });
 });
 
