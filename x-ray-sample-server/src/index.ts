@@ -76,7 +76,7 @@ app.get('/mysql/', (req, res) => {
       res.send(`Encountered error while querying ${table}: ${err}`);
       return;
     }
-    res.send(`Retrieved the following results from ${table}:\n${results}`);
+    res.send(`Retrieved the following results from ${table}:\n${JSON.stringify(results, null, 2)}`);
   });
 
   connection.end();
