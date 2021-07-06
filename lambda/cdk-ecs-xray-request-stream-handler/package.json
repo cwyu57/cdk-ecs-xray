@@ -10,5 +10,8 @@
   "license": "ISC",
   "devDependencies": {
     "aws-sdk": "^2.880.0"
+  },
+  "dependencies": {
+    "aws-xray-sdk-core": "^3.3.3"
   }
 }
