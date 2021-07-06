@@ -7,6 +7,7 @@ import * as ecrAssets from '@aws-cdk/aws-ecr-assets'
 import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2';
 import * as iam from '@aws-cdk/aws-iam';
 import * as lambda from '@aws-cdk/aws-lambda';
+import * as eventSources from '@aws-cdk/aws-lambda-event-sources';
 import * as logs from '@aws-cdk/aws-logs';
 export class CdkEcsXrayStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -34,6 +35,12 @@ export class CdkEcsXrayStack extends cdk.Stack {
         }),
       ],
     });
+
+    dynamoStreamHandler.addEventSource(
+      new eventSources.DynamoEventSource(table, {
+        startingPosition: lambda.StartingPosition.LATEST,
+      },
+    ))
 
     const vpc = new ec2.Vpc(this, 'Vpc', { cidr: '10.0.0.0/16' });
 
