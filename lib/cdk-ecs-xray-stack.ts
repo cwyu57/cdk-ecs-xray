@@ -35,6 +35,9 @@ export class CdkEcsXrayStack extends cdk.Stack {
       handler: 'index.handler',
       code: lambda.Code.fromAsset('./lambda/cdk-ecs-xray-request-stream-handler'),
       tracing: lambda.Tracing.ACTIVE,
+      environment: {
+        BUCKET_NAME: bucket.bucketName,
+      },
       initialPolicy: [
         new iam.PolicyStatement({
           actions: ['s3:*'],
