@@ -16,7 +16,7 @@ exports.handler = async (event) => {
         Bucket: bucketName,
         Key: record.dynamodb.NewImage.id.S,
         Body: {
-          record: record
+          record: JSON.stringify(record, null, 2),
         },
       }).promise();
     }),
