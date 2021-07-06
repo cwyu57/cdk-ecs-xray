@@ -91,9 +91,9 @@ app.get('/dynamo-lambda-s3/:id', (req, res) => {
     {
       TableName: tableName,
       Key: { id },
-      UpdateExpression: 'set count = if_not_exists (count, :0)',
+      UpdateExpression: 'set click_count = click_count + :incr',
       ExpressionAttributeValues: {
-        ':0': 0,
+        ':incr': 1,
       },
       ReturnValues: 'ALL_NEW',
     }
