@@ -82,10 +82,10 @@ app.get('/mysql/', (req, res) => {
   connection.end();
 });
 
-app.post('/dynamo-lambda-s3/', (req, res) => {
+app.get('/dynamo-lambda-s3/:id', (req, res) => {
   const documentClient = new AWS.DynamoDB.DocumentClient();
   const tableName = process.env.DYNAMO_TABLE_NAME!;
-  const { id } = req.body;
+  const { id } = req.params;
 
   documentClient.update(
     {
