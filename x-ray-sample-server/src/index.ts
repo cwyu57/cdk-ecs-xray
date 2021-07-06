@@ -82,6 +82,30 @@ app.get('/mysql/', (req, res) => {
   connection.end();
 });
 
+app.post('/dynamo-lambda-s3/', (req, res) => {
+  const documentClient = new AWS.DynamoDB.DocumentClient();
+  const tableName = process.env.DYNAMO_TABLE_NAME!;
+  const { id } = req.body;
+
+  documentClient.update(
+    {
+      TableName: tableName,
+      Key: { id },
+      UpdateExpression: 'set count = if_not_exists (count, :0)',
+      ExpressionAttributeValues: {
+        ':0': 0,
+      },
+      ReturnValues: 'ALL_NEW',
+    }
+  ).promise()
+    .then(function (data) {
+      res.send(`Update Table ${tableName} Key ${{ id }} success}`);
+    })
+    .catch(function(err) {
+      res.send(`Encountered error while Table ${tableName} Key ${{ id }}: ${err}`);
+    });
+});
+
 app.use(XRayExpress.closeSegment());
 
 app.listen(port, () => {
