@@ -10,6 +10,9 @@ AWS.config.update({ region: process.env.DEFAULT_AWS_REGION });
 AWSXRay.captureHTTPsGlobal(require('https'));
 const https = require('https');
 
+// Capture MySQL queries
+const mysql = AWSXRay.captureMySQL(require('mysql'));
+
 const XRayExpress = AWSXRay.express;
 
 const app = express();
@@ -50,6 +53,33 @@ app.get('/http-request/', (req, res) => {
       res.send(`Successfully reached ${endpoint}.`);
     });
   });
+});
+
+app.get('/mysql/', (req, res) => {
+  const config = {
+    host: process.env.MYSQL_HOST,
+    database: process.env.MYSQL_DATABASE,
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+  };
+
+  const table = process.env.MYSQL_TABLE;
+
+  if (!config.user || !config.database || !config.password || !config.host || !table) {
+    res.send('Please correctly mysql config');
+    return;
+  }
+
+  const connection = mysql.createConnection(config);
+  connection.query(`SELECT * FROM ${table}`, (err, results, fields) => {
+    if (err) {
+      res.send(`Encountered error while querying ${table}: ${err}`);
+      return;
+    }
+    res.send(`Retrieved the following results from ${table}:\n${results}`);
+  });
+
+  connection.end();
 });
 
 app.use(XRayExpress.closeSegment());
