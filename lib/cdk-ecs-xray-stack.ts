@@ -6,6 +6,7 @@ import * as ecs from '@aws-cdk/aws-ecs';
 import * as ecrAssets from '@aws-cdk/aws-ecr-assets'
 import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2';
 import * as iam from '@aws-cdk/aws-iam';
+import * as lambda from '@aws-cdk/aws-lambda';
 import * as logs from '@aws-cdk/aws-logs';
 export class CdkEcsXrayStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -18,6 +19,20 @@ export class CdkEcsXrayStack extends cdk.Stack {
       stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    const dynamoStreamHandler = new lambda.Function(this, 'LambdaFunction', {
+      functionName: 'cdk-ecs-xray-request-stream-handler',
+      runtime: lambda.Runtime.NODEJS_14_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset('./lambda/cdk-ecs-xray-request-stream-handler'),
+      tracing: lambda.Tracing.ACTIVE,
+      initialPolicy: [
+        new iam.PolicyStatement({
+          actions: ['s3:*'],
+          resources: ['*'],
+        }),
+      ],
     });
 
     const vpc = new ec2.Vpc(this, 'Vpc', { cidr: '10.0.0.0/16' });
