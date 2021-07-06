@@ -1,4 +1,5 @@
-const AWS = require('aws-sdk'); // eslint-disable-line import/no-extraneous-dependencies
+const AWSXRay = require('aws-xray-sdk-core')
+const AWS = AWSXRay.captureAWS(require('aws-sdk'))
 
 const region = process.env.AWS_REGION;
 const bucketName = process.env.BUCKET_NAME;
