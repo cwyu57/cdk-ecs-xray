@@ -9,11 +9,18 @@ import * as iam from '@aws-cdk/aws-iam';
 import * as lambda from '@aws-cdk/aws-lambda';
 import * as eventSources from '@aws-cdk/aws-lambda-event-sources';
 import * as logs from '@aws-cdk/aws-logs';
+import * as s3 from '@aws-cdk/aws-s3';
+
 export class CdkEcsXrayStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
     // The code that defines your stack goes here
+    const bucket = new s3.Bucket(this, 'Bucket', {
+      bucketName: 'cdk-ecs-xray-static-bucket',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
     const table = new dynamodb.Table(this, 'DynamoDBTable', {
       tableName: 'cdk-ecs-xray-request',
       partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
