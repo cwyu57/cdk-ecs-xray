@@ -14,7 +14,7 @@ exports.handler = async (event) => {
     event.Records.map((record) => {
       return s3.putObject({
         Bucket: bucketName,
-        Key: record.dynamodb.NewImage.id,
+        Key: record.dynamodb.NewImage.id.S,
         Body: {
           record: record
         },
