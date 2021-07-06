@@ -14,13 +14,13 @@ export class CdkEcsXrayStack extends cdk.Stack {
     // The code that defines your stack goes here
     const vpc = new ec2.Vpc(this, 'Vpc', { cidr: '10.0.0.0/16' });
 
-    const assets = new ecrAssets.DockerImageAsset(this, 'DockerImageAsset', {
-      directory: path.join(__dirname, '../', 'x-ray-sample-server'),
-    });
-
     const cluster = new ecs.Cluster(this, 'EcsCluster', { vpc });
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition');
+
+    const assets = new ecrAssets.DockerImageAsset(this, 'DockerImageAsset', {
+      directory: path.join(__dirname, '../', 'x-ray-sample-server'),
+    });
 
     taskDefinition
       .addContainer('XRaySampleServerContainer', {
