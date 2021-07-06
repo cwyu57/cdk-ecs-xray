@@ -26,6 +26,14 @@ export class CdkEcsXrayStack extends cdk.Stack {
       .addContainer('XRaySampleServerContainer', {
         image: ecs.ContainerImage.fromDockerImageAsset(assets),
         memoryLimitMiB: 512,
+        environment: {
+          DEFAULT_AWS_REGION: process.env.CDK_DEFAULT_REGION!,
+          MYSQL_HOST: process.env.MYSQL_HOST!,
+          MYSQL_DATABASE: process.env.MYSQL_DATABASE!,
+          MYSQL_USER: process.env.MYSQL_USER!,
+          MYSQL_PASSWORD: process.env.MYSQL_PASSWORD!,
+          MYSQL_TABLE: process.env.MYSQL_TABLE!,
+        },
         logging: ecs.LogDriver.awsLogs({
           streamPrefix: 'x-ray-ecs-fargate-service',
           logGroup: new logs.LogGroup(this, 'XRaySampleServerContainerLogGroup', {
@@ -55,6 +63,10 @@ export class CdkEcsXrayStack extends cdk.Stack {
 
     taskDefinition.taskRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('AWSXRayDaemonWriteAccess'),
+    );
+
+    taskDefinition.taskRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonDynamoDBFullAccess'),
     );
 
     const fatgetService = new ecs.FargateService(this, 'FargateService', {
