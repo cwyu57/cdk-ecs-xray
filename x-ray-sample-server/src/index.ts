@@ -2,12 +2,15 @@ import express from 'express';
 import AWSXRay from 'aws-xray-sdk';
 import AWSSdk from 'aws-sdk'
 
+// Capture all AWS clients we create
+const AWS = AWSXRay.captureAWS(AWSSdk);
+AWS.config.update({ region: process.env.DEFAULT_AWS_REGION });
+
+// Capture all outgoing https requestss
 AWSXRay.captureHTTPsGlobal(require('https'));
 const https = require('https');
 
-const AWS = AWSXRay.captureAWS(AWSSdk);
 const XRayExpress = AWSXRay.express;
-AWS.config.update({ region: process.env.DEFAULT_AWS_REGION });
 
 const app = express();
 const port = 3000;
@@ -21,6 +24,17 @@ app.get('/', (req, res) => {
     sub.close();
     res.sendFile(`${process.cwd()}/index.html`);
   }, 500);
+});
+
+app.get('/aws-sdk/', (req, res) => {
+  const ddb = new AWS.DynamoDB();
+  const ddbPromise = ddb.listTables().promise();
+
+  ddbPromise.then(function(data) {
+    res.send(`ListTables result:\n ${JSON.stringify(data)}`);
+  }).catch(function(err) {
+    res.send(`Encountered error while calling ListTables: ${err}`);
+  });
 });
 
 app.get('/http-request/', (req, res) => {
