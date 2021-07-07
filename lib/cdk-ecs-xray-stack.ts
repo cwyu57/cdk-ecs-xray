@@ -10,6 +10,7 @@ import * as lambda from '@aws-cdk/aws-lambda';
 import * as eventSources from '@aws-cdk/aws-lambda-event-sources';
 import * as logs from '@aws-cdk/aws-logs';
 import * as s3 from '@aws-cdk/aws-s3';
+import * as ssm from '@aws-cdk/aws-ssm';
 
 export class CdkEcsXrayStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
@@ -60,6 +61,17 @@ export class CdkEcsXrayStack extends cdk.Stack {
 
     const assets = new ecrAssets.DockerImageAsset(this, 'DockerImageAsset', {
       directory: path.join(__dirname, '../', 'x-ray-sample-server'),
+    });
+
+    const cloudwatchConfig = new ssm.StringParameter(this, 'Parameter', {
+      parameterName: 'ecs-cwagent',
+      stringValue: JSON.stringify({
+        logs: {
+          metrics_collected: {
+            emf: {},
+          },
+        },
+      }, null, 2),
     });
 
     taskDefinition
