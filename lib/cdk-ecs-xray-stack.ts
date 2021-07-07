@@ -51,7 +51,7 @@ export class CdkEcsXrayStack extends cdk.Stack {
       new eventSources.DynamoEventSource(table, {
         startingPosition: lambda.StartingPosition.LATEST,
       },
-    ))
+    ));
 
     const vpc = new ec2.Vpc(this, 'Vpc', { cidr: '10.0.0.0/16' });
 
@@ -132,7 +132,7 @@ export class CdkEcsXrayStack extends cdk.Stack {
         }),
       });
 
-
+    // preparing ECS task role
     taskDefinition.taskRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('AWSXRayDaemonWriteAccess'),
     );
@@ -145,15 +145,16 @@ export class CdkEcsXrayStack extends cdk.Stack {
       iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonDynamoDBFullAccess'),
     );
 
-    taskDefinition.executionRole?.addManagedPolicy(
+    // preparing ECS task definition role
+    taskDefinition.obtainExecutionRole().addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMReadOnlyAccess'),
     );
 
-    taskDefinition.executionRole?.addManagedPolicy(
+    taskDefinition.obtainExecutionRole().addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonECSTaskExecutionRolePolicy'),
     );
 
-    taskDefinition.executionRole?.addManagedPolicy(
+    taskDefinition.obtainExecutionRole().addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('CloudWatchAgentServerPolicy'),
     );
 
