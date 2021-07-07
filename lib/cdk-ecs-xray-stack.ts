@@ -114,12 +114,47 @@ export class CdkEcsXrayStack extends cdk.Stack {
       })
       .addPortMappings({ containerPort: 2000, protocol: ecs.Protocol.UDP });
 
+    taskDefinition
+      .addContainer('CloudwatchAgentContainer', {
+        image: ecs.ContainerImage.fromRegistry('amazon/cloudwatch-agent'),
+        cpu: 32,
+        memoryLimitMiB: 256,
+        secrets: {
+          CW_CONFIG_CONTENT: ecs.Secret.fromSsmParameter(cloudwatchConfig),
+        },
+        logging: ecs.LogDriver.awsLogs({
+          streamPrefix: 'x-ray-ecs-fargate-service',
+          logGroup: new logs.LogGroup(this, 'CloudwatchAgentContainerLogGroup', {
+            logGroupName: 'x-ray-ecs-fargate-service-cloudwatch-agent-container',
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            retention: logs.RetentionDays.ONE_WEEK,
+          }),
+        }),
+      });
+
+
     taskDefinition.taskRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('AWSXRayDaemonWriteAccess'),
     );
 
     taskDefinition.taskRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('CloudWatchAgentServerPolicy'),
+    );
+
+    taskDefinition.taskRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonDynamoDBFullAccess'),
+    );
+
+    taskDefinition.executionRole?.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMReadOnlyAccess'),
+    );
+
+    taskDefinition.executionRole?.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonECSTaskExecutionRolePolicy'),
+    );
+
+    taskDefinition.executionRole?.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('CloudWatchAgentServerPolicy'),
     );
 
     const fatgetService = new ecs.FargateService(this, 'FargateService', {
