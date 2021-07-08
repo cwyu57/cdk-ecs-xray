@@ -14,7 +14,13 @@ const https = require('https');
 const mysql = AWSXRay.captureMySQL(require('mysql'));
 
 // Create your own logger, or instantiate one using a library.
-AWSXRay.setLogger(console);
+const logger = {
+  error: (message?: any, ...optionalParams: any[]) => { console.error(message, ...optionalParams) },
+  warn: (message?: any, ...optionalParams: any[]) => { console.warn(message, ...optionalParams) },
+  info: (message?: any, ...optionalParams: any[]) => { console.info(message, ...optionalParams) },
+  debug: (message?: any, ...optionalParams: any[]) => { console.debug(message, ...optionalParams) }
+};
+AWSXRay.setLogger(logger);
 
 const XRayExpress = AWSXRay.express;
 
@@ -33,7 +39,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/aws-sdk/', (req, res) => {
-  console.info('GET /aws-sdk/');
+  logger.info('GET /aws-sdk/');
 
   const ddb = new AWS.DynamoDB();
   const ddbPromise = ddb.listTables().promise();
@@ -46,7 +52,7 @@ app.get('/aws-sdk/', (req, res) => {
 });
 
 app.get('/http-request/', (req, res) => {
-  console.info('GET /http-request/');
+  logger.info('GET /http-request/');
 
   const endpoint = 'https://amazon.com/';
   https.get(endpoint, (response: any) => {
@@ -63,7 +69,7 @@ app.get('/http-request/', (req, res) => {
 });
 
 app.get('/mysql/', (req, res) => {
-  console.info('GET /mysql/');
+  logger.info('GET /mysql/');
 
   const config = {
     host: process.env.MYSQL_HOST,
@@ -96,7 +102,7 @@ app.get('/dynamo-lambda-s3/:id', (req, res) => {
   const tableName = process.env.DYNAMO_TABLE_NAME!;
   const { id } = req.params;
 
-  console.info('GET /dynamo-lambda-s3/:id, id =', id);
+  logger.info('GET /dynamo-lambda-s3/:id, id =', id);
 
   documentClient.update(
     {
@@ -121,5 +127,5 @@ app.get('/dynamo-lambda-s3/:id', (req, res) => {
 app.use(XRayExpress.closeSegment());
 
 app.listen(port, () => {
-  return console.log(`server is listening on ${port}`);
+  return logger.info(`server is listening on ${port}`);
 });
