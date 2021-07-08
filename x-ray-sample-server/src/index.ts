@@ -2,6 +2,15 @@ import express from 'express';
 import AWSXRay from 'aws-xray-sdk';
 import AWSSdk from 'aws-sdk'
 
+// Create your own logger, or instantiate one using a library.
+const logger = {
+  error: (message?: any, ...optionalParams: any[]) => { console.error(message, ...optionalParams) },
+  warn: (message?: any, ...optionalParams: any[]) => { console.warn(message, ...optionalParams) },
+  info: (message?: any, ...optionalParams: any[]) => { console.info(message, ...optionalParams) },
+  debug: (message?: any, ...optionalParams: any[]) => { console.debug(message, ...optionalParams) }
+};
+AWSXRay.setLogger(logger);
+
 // Capture all AWS clients we create
 const AWS = AWSXRay.captureAWS(AWSSdk);
 AWS.config.update({ region: process.env.DEFAULT_AWS_REGION });
@@ -12,15 +21,6 @@ const https = require('https');
 
 // Capture MySQL queries
 const mysql = AWSXRay.captureMySQL(require('mysql'));
-
-// Create your own logger, or instantiate one using a library.
-const logger = {
-  error: (message?: any, ...optionalParams: any[]) => { console.error(message, ...optionalParams) },
-  warn: (message?: any, ...optionalParams: any[]) => { console.warn(message, ...optionalParams) },
-  info: (message?: any, ...optionalParams: any[]) => { console.info(message, ...optionalParams) },
-  debug: (message?: any, ...optionalParams: any[]) => { console.debug(message, ...optionalParams) }
-};
-AWSXRay.setLogger(logger);
 
 const XRayExpress = AWSXRay.express;
 
