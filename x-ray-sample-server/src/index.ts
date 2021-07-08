@@ -13,6 +13,9 @@ const https = require('https');
 // Capture MySQL queries
 const mysql = AWSXRay.captureMySQL(require('mysql'));
 
+// Create your own logger, or instantiate one using a library.
+AWSXRay.setLogger(console);
+
 const XRayExpress = AWSXRay.express;
 
 const app = express();
@@ -30,6 +33,8 @@ app.get('/', (req, res) => {
 });
 
 app.get('/aws-sdk/', (req, res) => {
+  console.info('GET /aws-sdk/');
+
   const ddb = new AWS.DynamoDB();
   const ddbPromise = ddb.listTables().promise();
 
@@ -41,6 +46,8 @@ app.get('/aws-sdk/', (req, res) => {
 });
 
 app.get('/http-request/', (req, res) => {
+  console.info('GET /http-request/');
+
   const endpoint = 'https://amazon.com/';
   https.get(endpoint, (response: any) => {
     response.on('data', () => {});
@@ -56,6 +63,8 @@ app.get('/http-request/', (req, res) => {
 });
 
 app.get('/mysql/', (req, res) => {
+  console.info('GET /mysql/');
+
   const config = {
     host: process.env.MYSQL_HOST,
     database: process.env.MYSQL_DATABASE,
@@ -86,6 +95,8 @@ app.get('/dynamo-lambda-s3/:id', (req, res) => {
   const documentClient = new AWS.DynamoDB.DocumentClient();
   const tableName = process.env.DYNAMO_TABLE_NAME!;
   const { id } = req.params;
+
+  console.info('GET /dynamo-lambda-s3/:id, id =', id);
 
   documentClient.update(
     {
