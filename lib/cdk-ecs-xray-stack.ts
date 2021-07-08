@@ -151,7 +151,7 @@ export class CdkEcsXrayStack extends cdk.Stack {
     );
 
     taskDefinition.obtainExecutionRole().addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonECSTaskExecutionRolePolicy'),
+      iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'),
     );
 
     taskDefinition.obtainExecutionRole().addManagedPolicy(
