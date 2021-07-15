@@ -2,6 +2,7 @@ import express from 'express';
 import AWSXRay from 'aws-xray-sdk';
 import AWSSdk from 'aws-sdk'
 
+import axios from './routes/axios';
 import mysql from './routes/mysql';
 import sequelize from './routes/sequelize';
 // Capture all AWS clients we create
@@ -53,7 +54,7 @@ app.get('/http-request/', (req, res) => {
     });
   });
 });
-
+app.get('/axios/', axios);
 app.get('/mysql/', mysql);
 app.get('/sequelize/', sequelize);
 
