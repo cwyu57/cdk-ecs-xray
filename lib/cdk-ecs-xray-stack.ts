@@ -17,7 +17,7 @@ export class CdkEcsXrayStack extends cdk.Stack {
 
     // The code that defines your stack goes here
     const bucket = new s3.Bucket(this, 'Bucket', {
-      bucketName: 'cdk-ecs-xray-static-bucket',
+      // bucketName: 'cdk-ecs-xray-static-bucket',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
