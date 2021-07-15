@@ -2,6 +2,8 @@ import express from 'express';
 import AWSXRay from 'aws-xray-sdk';
 import AWSSdk from 'aws-sdk'
 
+import mysql from './routes/mysql';
+import sequelize from './routes/sequelize';
 // Capture all AWS clients we create
 const AWS = AWSXRay.captureAWS(AWSSdk);
 AWS.config.update({ region: process.env.DEFAULT_AWS_REGION });
@@ -9,9 +11,6 @@ AWS.config.update({ region: process.env.DEFAULT_AWS_REGION });
 // Capture all outgoing https requestss
 AWSXRay.captureHTTPsGlobal(require('https'));
 const https = require('https');
-
-// Capture MySQL queries
-const mysql = AWSXRay.captureMySQL(require('mysql'));
 
 const XRayExpress = AWSXRay.express;
 
@@ -55,32 +54,8 @@ app.get('/http-request/', (req, res) => {
   });
 });
 
-app.get('/mysql/', (req, res) => {
-  const config = {
-    host: process.env.MYSQL_HOST,
-    database: process.env.MYSQL_DATABASE,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-  };
-
-  const table = process.env.MYSQL_TABLE;
-
-  if (!config.user || !config.database || !config.password || !config.host || !table) {
-    res.send('Please correctly mysql config');
-    return;
-  }
-
-  const connection = mysql.createConnection(config);
-  connection.query(`SELECT * FROM ${table}`, (err, results, fields) => {
-    if (err) {
-      res.send(`Encountered error while querying ${table}: ${err}`);
-      return;
-    }
-    res.send(`Retrieved the following results from ${table}:\n${JSON.stringify(results, null, 2)}`);
-  });
-
-  connection.end();
-});
+app.get('/mysql/', mysql);
+app.get('/sequelize/', sequelize);
 
 app.get('/dynamo-lambda-s3/:id', (req, res) => {
   const documentClient = new AWS.DynamoDB.DocumentClient();
