@@ -5,6 +5,10 @@ import AWSSdk from 'aws-sdk'
 import axios from './routes/axios';
 import mysql from './routes/mysql';
 import sequelize from './routes/sequelize';
+
+// Use ECSPlugin
+AWSXRay.config([ AWSXRay.plugins.ECSPlugin ]);
+
 // Capture all AWS clients we create
 const AWS = AWSXRay.captureAWS(AWSSdk);
 AWS.config.update({ region: process.env.DEFAULT_AWS_REGION });
