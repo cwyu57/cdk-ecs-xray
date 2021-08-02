@@ -54,7 +54,10 @@ export class CdkEcsXrayStack extends cdk.Stack {
 
     const vpc = new ec2.Vpc(this, 'Vpc', { cidr: '10.0.0.0/16' });
 
-    const cluster = new ecs.Cluster(this, 'EcsCluster', { vpc });
+    const cluster = new ecs.Cluster(this, 'EcsCluster', {
+      vpc,
+      containerInsights: true,
+    });
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition');
 
