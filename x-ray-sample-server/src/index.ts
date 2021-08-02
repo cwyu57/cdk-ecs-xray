@@ -67,6 +67,10 @@ app.get('/dynamo-lambda-s3/:id', (req, res) => {
   const tableName = process.env.DYNAMO_TABLE_NAME!;
   const { id } = req.params;
 
+  const segment = AWSXRay.getSegment() as any ?? {};
+
+  console.log(`${segment.trace_id!} GET /dynamo-lambda-s3/:id, id =`, id);
+
   documentClient.update(
     {
       TableName: tableName,
