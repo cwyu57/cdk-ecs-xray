@@ -65,6 +65,12 @@ export class CdkEcsXrayStack extends cdk.Stack {
       directory: path.join(__dirname, '../', 'x-ray-sample-server'),
     });
 
+    const logGroup = new logs.LogGroup(this, 'XRayFargateServiceLogGroup', {
+      logGroupName: '/ecs/x-ray-fargate-service',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      retention: logs.RetentionDays.ONE_WEEK,
+    });
+
     taskDefinition
       .addContainer('XRaySampleServerContainer', {
         image: ecs.ContainerImage.fromDockerImageAsset(assets),
@@ -82,11 +88,7 @@ export class CdkEcsXrayStack extends cdk.Stack {
         },
         logging: ecs.LogDriver.awsLogs({
           streamPrefix: 'x-ray-ecs-fargate-service',
-          logGroup: new logs.LogGroup(this, 'XRaySampleServerContainerLogGroup', {
-            logGroupName: 'x-ray-ecs-fargate-service-x-ray-sample-server-container',
-            removalPolicy: cdk.RemovalPolicy.DESTROY,
-            retention: logs.RetentionDays.ONE_WEEK,
-          })
+          logGroup: logGroup,
         }),
       })
       .addPortMappings({ containerPort: 3000 });
@@ -98,11 +100,7 @@ export class CdkEcsXrayStack extends cdk.Stack {
         memoryLimitMiB: 256,
         logging: ecs.LogDriver.awsLogs({
           streamPrefix: 'x-ray-ecs-fargate-service',
-          logGroup: new logs.LogGroup(this, 'XRayDaemonContainerLogGroup', {
-            logGroupName: 'x-ray-ecs-fargate-service-x-ray-daemon-container',
-            removalPolicy: cdk.RemovalPolicy.DESTROY,
-            retention: logs.RetentionDays.ONE_WEEK,
-          })
+          logGroup: logGroup,
         }),
       })
       .addPortMappings({ containerPort: 2000, protocol: ecs.Protocol.UDP });
