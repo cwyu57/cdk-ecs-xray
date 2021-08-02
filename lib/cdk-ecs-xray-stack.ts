@@ -77,6 +77,8 @@ export class CdkEcsXrayStack extends cdk.Stack {
           MYSQL_PASSWORD: process.env.MYSQL_PASSWORD!,
           MYSQL_TABLE: process.env.MYSQL_TABLE!,
           DYNAMO_TABLE_NAME: table.tableName,
+          AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR',
+          AWS_XRAY_LOG_LEVEL: 'error',
         },
         logging: ecs.LogDriver.awsLogs({
           streamPrefix: 'x-ray-ecs-fargate-service',
