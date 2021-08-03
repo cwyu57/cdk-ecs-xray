@@ -44,6 +44,7 @@ export class CdkEcsXrayStack extends cdk.Stack {
           resources: ['*'],
         }),
       ],
+      logRetention: logs.RetentionDays.ONE_DAY,
     });
 
     dynamoStreamHandler.addEventSource(
@@ -68,7 +69,7 @@ export class CdkEcsXrayStack extends cdk.Stack {
     const logGroup = new logs.LogGroup(this, 'XRayFargateServiceLogGroup', {
       logGroupName: '/ecs/x-ray-fargate-service',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
-      retention: logs.RetentionDays.ONE_WEEK,
+      retention: logs.RetentionDays.ONE_DAY,
     });
 
     taskDefinition
