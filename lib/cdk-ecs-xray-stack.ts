@@ -17,7 +17,6 @@ export class CdkEcsXrayStack extends cdk.Stack {
 
     // The code that defines your stack goes here
     const bucket = new s3.Bucket(this, 'Bucket', {
-      // bucketName: 'cdk-ecs-xray-static-bucket',
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
@@ -51,9 +50,9 @@ export class CdkEcsXrayStack extends cdk.Stack {
       new eventSources.DynamoEventSource(table, {
         startingPosition: lambda.StartingPosition.LATEST,
       },
-    ))
+    ));
 
-    const vpc = new ec2.Vpc(this, 'Vpc', { cidr: '10.0.0.0/16' });
+    const vpc = new ec2.Vpc(this, 'Vpc');
 
     const cluster = new ecs.Cluster(this, 'EcsCluster', {
       vpc,
