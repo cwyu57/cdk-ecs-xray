@@ -1,22 +1,144 @@
-import { App, Construct, Stack, StackProps } from '@aws-cdk/core';
+import * as path from 'path';
+import * as dynamodb from '@aws-cdk/aws-dynamodb';
+import * as ec2 from '@aws-cdk/aws-ec2';
+import * as ecrAssets from '@aws-cdk/aws-ecr-assets';
+import * as ecs from '@aws-cdk/aws-ecs';
+import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2';
+import * as iam from '@aws-cdk/aws-iam';
+import * as lambda from '@aws-cdk/aws-lambda';
+import * as eventSources from '@aws-cdk/aws-lambda-event-sources';
+import * as logs from '@aws-cdk/aws-logs';
+import * as s3 from '@aws-cdk/aws-s3';
+import * as cdk from '@aws-cdk/core';
 
-export class MyStack extends Stack {
-  constructor(scope: Construct, id: string, props: StackProps = {}) {
+export class CdkEcsXrayStack extends cdk.Stack {
+  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // define resources here...
+    // The code that defines your stack goes here
+    const bucket = new s3.Bucket(this, 'Bucket', {
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    const table = new dynamodb.Table(this, 'DynamoDBTable', {
+      tableName: 'cdk-ecs-xray-request',
+      partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING },
+      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+    });
+
+    const dynamoStreamHandler = new lambda.Function(this, 'LambdaFunction', {
+      functionName: 'cdk-ecs-xray-request-stream-handler',
+      runtime: lambda.Runtime.NODEJS_14_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../assets/lambda/cdk-ecs-xray-request-stream-handler')),
+      tracing: lambda.Tracing.ACTIVE,
+      environment: {
+        BUCKET_NAME: bucket.bucketName,
+      },
+      initialPolicy: [
+        new iam.PolicyStatement({
+          actions: ['s3:*'],
+          resources: ['*'],
+        }),
+      ],
+      logRetention: logs.RetentionDays.ONE_DAY,
+    });
+
+    dynamoStreamHandler.addEventSource(
+      new eventSources.DynamoEventSource(table, {
+        startingPosition: lambda.StartingPosition.LATEST,
+      }),
+    );
+
+    const vpc = new ec2.Vpc(this, 'Vpc');
+
+    const cluster = new ecs.Cluster(this, 'EcsCluster', {
+      vpc,
+      containerInsights: true,
+    });
+
+    const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition');
+
+    const assets = new ecrAssets.DockerImageAsset(this, 'DockerImageAsset', {
+      directory: path.join(__dirname, '../assets/x-ray-sample-server'),
+    });
+
+    const logGroup = new logs.LogGroup(this, 'XRayFargateServiceLogGroup', {
+      logGroupName: '/ecs/x-ray-fargate-service',
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      retention: logs.RetentionDays.ONE_DAY,
+    });
+
+    taskDefinition
+      .addContainer('XRaySampleServerContainer', {
+        image: ecs.ContainerImage.fromDockerImageAsset(assets),
+        memoryLimitMiB: 512,
+        environment: {
+          DEFAULT_AWS_REGION: process.env.CDK_DEFAULT_REGION!,
+          MYSQL_HOST: process.env.MYSQL_HOST!,
+          MYSQL_DATABASE: process.env.MYSQL_DATABASE!,
+          MYSQL_USER: process.env.MYSQL_USER!,
+          MYSQL_PASSWORD: process.env.MYSQL_PASSWORD!,
+          MYSQL_TABLE: process.env.MYSQL_TABLE!,
+          DYNAMO_TABLE_NAME: table.tableName,
+          AWS_XRAY_CONTEXT_MISSING: 'LOG_ERROR',
+          AWS_XRAY_LOG_LEVEL: 'error',
+        },
+        logging: ecs.LogDriver.awsLogs({
+          streamPrefix: 'x-ray-ecs-fargate-service',
+          logGroup: logGroup,
+        }),
+      })
+      .addPortMappings({ containerPort: 3000 });
+
+    taskDefinition
+      .addContainer('XRayDaemonContainer', {
+        image: ecs.ContainerImage.fromRegistry('amazon/aws-xray-daemon'),
+        cpu: 32,
+        memoryLimitMiB: 256,
+        logging: ecs.LogDriver.awsLogs({
+          streamPrefix: 'x-ray-ecs-fargate-service',
+          logGroup: logGroup,
+        }),
+      })
+      .addPortMappings({ containerPort: 2000, protocol: ecs.Protocol.UDP });
+
+    taskDefinition.taskRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AWSXRayDaemonWriteAccess'),
+    );
+
+    taskDefinition.taskRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonDynamoDBFullAccess'),
+    );
+
+    const fatgetService = new ecs.FargateService(this, 'FargateService', {
+      cluster,
+      taskDefinition,
+    });
+
+    const loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'LoadBalancer', {
+      vpc,
+      internetFacing: true,
+    });
+
+    const listener = loadBalancer.addListener('Listener', { port: 80 });
+
+    listener.addTargets('ECS', {
+      port: 80,
+      targets: [fatgetService],
+    });
   }
 }
 
-// for development, use account/region from cdk cli
-const devEnv = {
-  account: process.env.CDK_DEFAULT_ACCOUNT,
-  region: process.env.CDK_DEFAULT_REGION,
-};
+const app = new cdk.App();
 
-const app = new App();
-
-new MyStack(app, 'my-stack-dev', { env: devEnv });
-// new MyStack(app, 'my-stack-prod', { env: prodEnv });
+new CdkEcsXrayStack(app, 'CdkEcsXrayStack', {
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: process.env.CDK_DEFAULT_REGION,
+  },
+});
 
 app.synth();
