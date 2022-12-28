@@ -63,6 +63,7 @@ export class CdkEcsXrayStack extends cdk.Stack {
 
     const assets = new ecrAssets.DockerImageAsset(this, 'DockerImageAsset', {
       directory: path.join(__dirname, '../assets/x-ray-sample-server'),
+      platform: ecrAssets.Platform.LINUX_AMD64,
     });
 
     const logGroup = new logs.LogGroup(this, 'XRayFargateServiceLogGroup', {
